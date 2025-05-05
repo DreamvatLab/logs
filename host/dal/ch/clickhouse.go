@@ -12,7 +12,6 @@ import (
 	"github.com/DreamvatLab/go/xconv"
 	"github.com/DreamvatLab/go/xerr"
 	"github.com/DreamvatLab/go/xtask"
-	"github.com/DreamvatLab/go/xutils"
 	"github.com/DreamvatLab/logs"
 	"github.com/DreamvatLab/logs/host/core"
 	"github.com/jmoiron/sqlx"
@@ -212,7 +211,7 @@ func (o *ClickHouseDAL) GetLogEntries(query *logs.LogEntriesQuery) ([]*logs.LogE
 	defer _dbLocker.RUnlock()
 
 	// Parallel run
-	results := xtask.ParallelRun(
+	results := xtask.ParallelRun(2,
 		func() (interface{}, error) {
 			var totalCount int64
 			countSql := fmt.Sprintf("SELECT COUNT(0) FROM `%s`.`%s` WHERE 0 = 0 %s", query.DBName, query.TableName, where.String())
@@ -245,8 +244,8 @@ func (o *ClickHouseDAL) GetLogEntries(query *logs.LogEntriesQuery) ([]*logs.LogE
 		return nil, 0, xerr.New("unexpected number of results")
 	}
 
-	// Merge errors using xutils.JointErrors
-	err := xutils.JointErrors(results[0].Error, results[1].Error)
+	// Merge errors using xerr.JointErrors
+	err := xerr.JointErrors(results[0].Error, results[1].Error)
 	if err != nil {
 		return nil, 0, err
 	}

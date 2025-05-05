@@ -7,7 +7,6 @@ import (
 
 	"github.com/DreamvatLab/go/xerr"
 	"github.com/DreamvatLab/go/xtask"
-	"github.com/DreamvatLab/go/xutils"
 	"github.com/DreamvatLab/logs"
 	"github.com/DreamvatLab/logs/host/core"
 	"go.mongodb.org/mongo-driver/bson"
@@ -278,7 +277,7 @@ func (o *MongoDAL) GetLogEntries(query *logs.LogEntriesQuery) ([]*logs.LogEntry,
 	skip := bson.M{"$skip": (query.PageIndex - 1) * query.PageSize}
 
 	// Replace existing implementation with new ParallelRun function
-	results := xtask.ParallelRun(
+	results := xtask.ParallelRun(2,
 		func() (interface{}, error) {
 			countMapPtr := make(map[string]int64)
 			var rs *mongo.Cursor
@@ -314,7 +313,7 @@ func (o *MongoDAL) GetLogEntries(query *logs.LogEntriesQuery) ([]*logs.LogEntry,
 
 	// Merge errors using xutils.JointErrors
 	var err error
-	err = xutils.JointErrors(results[0].Error, results[1].Error)
+	err = xerr.JointErrors(results[0].Error, results[1].Error)
 	if err != nil {
 		return nil, 0, err
 	}

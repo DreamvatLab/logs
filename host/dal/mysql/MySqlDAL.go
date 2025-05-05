@@ -12,7 +12,6 @@ import (
 	"github.com/DreamvatLab/go/xconv"
 	"github.com/DreamvatLab/go/xerr"
 	"github.com/DreamvatLab/go/xtask"
-	"github.com/DreamvatLab/go/xutils"
 	"github.com/DreamvatLab/logs"
 	"github.com/DreamvatLab/logs/host/core"
 
@@ -315,7 +314,7 @@ func (o *MySqlDAL) GetLogEntries(query *logs.LogEntriesQuery) ([]*logs.LogEntry,
 	defer _dbLocker.RUnlock()
 
 	// Parallel run
-	results := xtask.ParallelRun(
+	results := xtask.ParallelRun(2,
 		func() (interface{}, error) {
 			var totalCount int64
 			countSql := fmt.Sprintf("CALL `%s`.`SYSSP_GetTotalCount` (?,?)", query.DBName)
@@ -344,7 +343,7 @@ func (o *MySqlDAL) GetLogEntries(query *logs.LogEntriesQuery) ([]*logs.LogEntry,
 	)
 
 	// Merge errors
-	err := xutils.JointErrors(results[0].Error, results[1].Error)
+	err := xerr.JointErrors(results[0].Error, results[1].Error)
 	if err != nil {
 		return nil, 0, err
 	}
