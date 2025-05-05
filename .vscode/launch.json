@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Host Main",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/host/main.go",
+            "cwd": "${workspaceFolder}/host",
+            "output": "${workspaceFolder}/host/__debug_bin.exe",
+            "env": {},
+            "args": []
+        }
+    ]
+} 

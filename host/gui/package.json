@@ -1,0 +1,25 @@
+{
+  "private": true,
+  "author": "DreamvatLab <dev@dreamvat.com>",
+  "scripts": {
+    "dev": "umi dev",
+    "build": "umi build",
+    "postinstall": "umi setup",
+    "setup": "umi setup",
+    "start": "npm run dev"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^6.0.0",
+    "antd": "^5.8.5",
+    "dayjs": "^1.11.9",
+    "mobx": "^6.10.0",
+    "mobx-react": "^9.0.0",
+    "react-json-view": "^1.21.3",
+    "umi": "^4.4.10"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "typescript": "^5.2.2"
+  }
+}

@@ -1,0 +1,90 @@
+// v1.0.0
+syntax = "proto3";
+
+package logs;
+
+option go_package = "github.com/DreamvatLab/logs";
+
+// Enums ========================================================================================
+
+enum LogLevel {
+    Verbose         = 0;
+    Debug           = 1;
+    Infomation      = 2;
+    Warning         = 3;
+    Error           = 4;
+    Fatal           = 5;
+}
+
+// Log Entry ========================================================================================
+
+message LogEntry {
+    // @gotags: db:"ID"
+    string ID           = 1;
+    // @gotags: db:"TraceNo"
+    string TraceNo      = 2;
+    // @gotags: db:"User"
+    string User         = 3;
+    // @gotags: db:"Message"
+    string Message      = 4;
+    // @gotags: db:"Error"
+    string Error        = 5;
+    // @gotags: db:"StackTrace"
+    string StackTrace   = 6;
+    // @gotags: db:"Payload"
+    string Payload       = 7;
+    // @gotags: db:"Level"
+    LogLevel Level      = 8;
+    // @gotags: db:"Flags"
+    int64 Flags         = 9;
+    // @gotags: db:"CreatedOnUtc"
+    int64 CreatedOnUtc  = 10;
+}
+
+message WriteLogCommand {
+    string ClientID     = 1;
+    LogEntry LogEntry   = 2;
+}
+
+message LogEntryQuery {
+    string DBName       = 1;
+    string TableName    = 2;
+    string ID           = 3;
+}
+
+message LogEntryResult {
+    string Message      = 1;
+    LogEntry LogEntry   = 2;
+}
+
+message LogEntriesQuery {
+    string DBName       = 1;
+    string TableName    = 2;
+    string TraceNo      = 3;
+    string User         = 4;
+    string Message      = 5;
+    string Error        = 6;
+    string StackTrace   = 7;
+    string OrderDir     = 8;
+    string StartTime    = 9;
+    string EndTime      = 10;
+    LogLevel Level      = 11;
+    int32 PageSize      = 12;
+    int32 PageIndex     = 13;
+    int32 OrderBy       = 14;
+    int64 Flags         = 15;
+}
+
+message LogEntriesResult {
+    string Message                  = 1;
+    int64 TotalCount                = 2;
+    repeated LogEntry LogEntries    = 3;
+}
+
+// Services ========================================================================================
+
+service LogEntryService{
+    rpc WriteLogEntry(WriteLogCommand) returns (LogEntryResult);
+    rpc GetLogEntry(LogEntryQuery) returns (LogEntryResult);
+    rpc GetLogEntries (LogEntriesQuery) returns (LogEntriesResult);
+}
