@@ -19,7 +19,7 @@ enum LogLevel {
 // Log Entry ========================================================================================
 
 message LogEntry {
-    // @gotags: db:"ID"
+    // @gotags: db:"ID" bson:"_id"
     string ID           = 1;
     // @gotags: db:"TraceNo"
     string TraceNo      = 2;
