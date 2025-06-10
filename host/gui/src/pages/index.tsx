@@ -84,7 +84,7 @@ const columns: TableColumnsType<LogEntry> = [
   {
     title: 'Date',
     align: "center",
-    width: 150,
+    width: 160,
     render: (_: any, x: LogEntry) => dayjs(x.CreatedOnUtc).format("MM/DD/YYYY hh:mm:ss A"),
     responsive: ['md'],
   },
