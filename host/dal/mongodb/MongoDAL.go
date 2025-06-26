@@ -269,7 +269,7 @@ func (o *MongoDAL) GetLogEntries(query *logs.LogEntriesQuery) ([]*logs.LogEntry,
 
 	// Sort
 	sortDir := -1
-	sort := bson.M{"$sort": bson.M{"createdonutc": sortDir}}
+	sort := bson.M{"$sort": bson.M{"_id": sortDir}}
 
 	// Paginate
 	limit := bson.M{"$limit": query.PageSize}
@@ -312,8 +312,7 @@ func (o *MongoDAL) GetLogEntries(query *logs.LogEntriesQuery) ([]*logs.LogEntry,
 	)
 
 	// Merge errors using xutils.JointErrors
-	var err error
-	err = xerr.JointErrors(results[0].Error, results[1].Error)
+	err := xerr.JointErrors(results[0].Error, results[1].Error)
 	if err != nil {
 		return nil, 0, err
 	}

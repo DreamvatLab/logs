@@ -1,6 +1,3 @@
-Set-Location ./gui
-pnpm build
-Set-Location ../
 Write-Host "#: Updating dependencies..."
 go mod tidy
 $imageName = "logs"
