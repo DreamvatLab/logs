@@ -9,17 +9,17 @@
     "start": "npm run dev"
   },
   "dependencies": {
-    "@ant-design/icons": "^6.0.0",
-    "antd": "^5.26.2",
-    "dayjs": "^1.11.13",
-    "mobx": "^6.13.7",
-    "mobx-react": "^9.2.0",
+    "@ant-design/icons": "^6.1.0",
+    "antd": "^6.0.1",
+    "dayjs": "^1.11.19",
+    "mobx": "^6.15.0",
+    "mobx-react": "^9.2.1",
     "react-json-view": "^1.21.3",
-    "umi": "^4.4.11"
+    "umi": "^4.6.5"
   },
   "devDependencies": {
-    "@types/react": "^19.1.8",
-    "@types/react-dom": "^19.1.6",
-    "typescript": "^5.8.3"
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.9.3"
   }
 }

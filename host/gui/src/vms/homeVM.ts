@@ -118,7 +118,8 @@ class HomeVM {
         });
     }
 
-    async search() {
+    // 数据加载逻辑
+    async loadData() {
         if (!this.database || !this.table) {
             return;
         }
@@ -151,10 +152,17 @@ class HomeVM {
             this.loading = false;
         });
     }
+
+    // 搜索按钮点击 - 重置页码到首页
+    async search() {
+        this.pageIndex = 1;
+        await this.loadData();
+    }
+
+    // 翻页 - 不重置页码
     async setPageIndex(v: number) {
         this.pageIndex = v;
-
-        await this.search();
+        await this.loadData();
     }
 
     async reset() {
