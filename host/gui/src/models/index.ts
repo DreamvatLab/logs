@@ -16,23 +16,24 @@ export interface LogEntry {
     StackTrace: string,
     Level: number,
     CreatedOnUtc: number,
+    CreatedOnUtcISO: string,
 }
 
 export interface SearchParams {
-    PageSize: number;
-    PageIndex: number;
-    DBName: string;
-    TableName: string;
-    User?: string;
-    TraceNo?: string;
-    Message?: string;
-    StartTime?: string;
-    EndTime?: string;
-    Level?: number;
-    Flags?: number;
+    PageSize: number,
+    PageIndex: number,
+    DBName: string,
+    TableName: string,
+    User?: string,
+    TraceNo?: string,
+    Message?: string,
+    StartTime?: string,
+    EndTime?: string,
+    Level?: number,
+    Flags?: number,
 }
 
 export interface TableDataSource {
-    total: number;
-    list: LogEntry[];
+    total: number,
+    list: LogEntry[],
 }
