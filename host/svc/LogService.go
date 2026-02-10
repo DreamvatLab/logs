@@ -46,7 +46,9 @@ func write(in *logs.WriteLogCommand) error {
 		// determine database and table
 		createdOnUtc := time.UnixMilli(in.LogEntry.CreatedOnUtc)
 		// convert to ISO 8601 format
-		in.LogEntry.CreatedOnUtcISO = createdOnUtc.Format(time.RFC3339)
+		if in.LogEntry.CreatedOnUtcISO == "" {
+			in.LogEntry.CreatedOnUtcISO = createdOnUtc.Format(time.RFC3339)
+		}
 
 		var dbName, tableName string
 		switch client.DBPolicy {
