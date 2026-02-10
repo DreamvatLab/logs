@@ -11,7 +11,6 @@ package logs
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -103,9 +102,11 @@ type LogEntry struct {
 	// @gotags: db:"Flags"
 	Flags int64 `protobuf:"varint,9,opt,name=Flags,proto3" json:"Flags,omitempty" db:"Flags"`
 	// @gotags: db:"CreatedOnUtc"
-	CreatedOnUtc  *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=CreatedOnUtc,proto3" json:"CreatedOnUtc,omitempty" db:"CreatedOnUtc"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	CreatedOnUtc int64 `protobuf:"varint,10,opt,name=CreatedOnUtc,proto3" json:"CreatedOnUtc,omitempty" db:"CreatedOnUtc"`
+	// @gotags: db:"CreatedOnUtcISO"
+	CreatedOnUtcISO string `protobuf:"bytes,11,opt,name=CreatedOnUtcISO,proto3" json:"CreatedOnUtcISO,omitempty" db:"CreatedOnUtcISO"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *LogEntry) Reset() {
@@ -201,11 +202,18 @@ func (x *LogEntry) GetFlags() int64 {
 	return 0
 }
 
-func (x *LogEntry) GetCreatedOnUtc() *timestamppb.Timestamp {
+func (x *LogEntry) GetCreatedOnUtc() int64 {
 	if x != nil {
 		return x.CreatedOnUtc
 	}
-	return nil
+	return 0
+}
+
+func (x *LogEntry) GetCreatedOnUtcISO() string {
+	if x != nil {
+		return x.CreatedOnUtcISO
+	}
+	return ""
 }
 
 type WriteLogCommand struct {
@@ -593,7 +601,7 @@ var File_logs_proto protoreflect.FileDescriptor
 const file_logs_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"logs.proto\x12\x04logs\x1a\x1fgoogle/protobuf/timestamp.proto\"\xae\x02\n" +
+	"logs.proto\x12\x04logs\"\xbc\x02\n" +
 	"\bLogEntry\x12\x0e\n" +
 	"\x02ID\x18\x01 \x01(\tR\x02ID\x12\x18\n" +
 	"\aTraceNo\x18\x02 \x01(\tR\aTraceNo\x12\x12\n" +
@@ -605,9 +613,10 @@ const file_logs_proto_rawDesc = "" +
 	"StackTrace\x12\x18\n" +
 	"\aPayload\x18\a \x01(\tR\aPayload\x12$\n" +
 	"\x05Level\x18\b \x01(\x0e2\x0e.logs.LogLevelR\x05Level\x12\x14\n" +
-	"\x05Flags\x18\t \x01(\x03R\x05Flags\x12>\n" +
+	"\x05Flags\x18\t \x01(\x03R\x05Flags\x12\"\n" +
 	"\fCreatedOnUtc\x18\n" +
-	" \x01(\v2\x1a.google.protobuf.TimestampR\fCreatedOnUtc\"Y\n" +
+	" \x01(\x03R\fCreatedOnUtc\x12(\n" +
+	"\x0fCreatedOnUtcISO\x18\v \x01(\tR\x0fCreatedOnUtcISO\"Y\n" +
 	"\x0fWriteLogCommand\x12\x1a\n" +
 	"\bClientID\x18\x01 \x01(\tR\bClientID\x12*\n" +
 	"\bLogEntry\x18\x02 \x01(\v2\x0e.logs.LogEntryR\bLogEntry\"U\n" +
@@ -673,33 +682,31 @@ func file_logs_proto_rawDescGZIP() []byte {
 var file_logs_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_logs_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_logs_proto_goTypes = []any{
-	(LogLevel)(0),                 // 0: logs.LogLevel
-	(*LogEntry)(nil),              // 1: logs.LogEntry
-	(*WriteLogCommand)(nil),       // 2: logs.WriteLogCommand
-	(*LogEntryQuery)(nil),         // 3: logs.LogEntryQuery
-	(*LogEntryResult)(nil),        // 4: logs.LogEntryResult
-	(*LogEntriesQuery)(nil),       // 5: logs.LogEntriesQuery
-	(*LogEntriesResult)(nil),      // 6: logs.LogEntriesResult
-	(*timestamppb.Timestamp)(nil), // 7: google.protobuf.Timestamp
+	(LogLevel)(0),            // 0: logs.LogLevel
+	(*LogEntry)(nil),         // 1: logs.LogEntry
+	(*WriteLogCommand)(nil),  // 2: logs.WriteLogCommand
+	(*LogEntryQuery)(nil),    // 3: logs.LogEntryQuery
+	(*LogEntryResult)(nil),   // 4: logs.LogEntryResult
+	(*LogEntriesQuery)(nil),  // 5: logs.LogEntriesQuery
+	(*LogEntriesResult)(nil), // 6: logs.LogEntriesResult
 }
 var file_logs_proto_depIdxs = []int32{
 	0, // 0: logs.LogEntry.Level:type_name -> logs.LogLevel
-	7, // 1: logs.LogEntry.CreatedOnUtc:type_name -> google.protobuf.Timestamp
-	1, // 2: logs.WriteLogCommand.LogEntry:type_name -> logs.LogEntry
-	1, // 3: logs.LogEntryResult.LogEntry:type_name -> logs.LogEntry
-	0, // 4: logs.LogEntriesQuery.Level:type_name -> logs.LogLevel
-	1, // 5: logs.LogEntriesResult.LogEntries:type_name -> logs.LogEntry
-	2, // 6: logs.LogEntryService.WriteLogEntry:input_type -> logs.WriteLogCommand
-	3, // 7: logs.LogEntryService.GetLogEntry:input_type -> logs.LogEntryQuery
-	5, // 8: logs.LogEntryService.GetLogEntries:input_type -> logs.LogEntriesQuery
-	4, // 9: logs.LogEntryService.WriteLogEntry:output_type -> logs.LogEntryResult
-	4, // 10: logs.LogEntryService.GetLogEntry:output_type -> logs.LogEntryResult
-	6, // 11: logs.LogEntryService.GetLogEntries:output_type -> logs.LogEntriesResult
-	9, // [9:12] is the sub-list for method output_type
-	6, // [6:9] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	1, // 1: logs.WriteLogCommand.LogEntry:type_name -> logs.LogEntry
+	1, // 2: logs.LogEntryResult.LogEntry:type_name -> logs.LogEntry
+	0, // 3: logs.LogEntriesQuery.Level:type_name -> logs.LogLevel
+	1, // 4: logs.LogEntriesResult.LogEntries:type_name -> logs.LogEntry
+	2, // 5: logs.LogEntryService.WriteLogEntry:input_type -> logs.WriteLogCommand
+	3, // 6: logs.LogEntryService.GetLogEntry:input_type -> logs.LogEntryQuery
+	5, // 7: logs.LogEntryService.GetLogEntries:input_type -> logs.LogEntriesQuery
+	4, // 8: logs.LogEntryService.WriteLogEntry:output_type -> logs.LogEntryResult
+	4, // 9: logs.LogEntryService.GetLogEntry:output_type -> logs.LogEntryResult
+	6, // 10: logs.LogEntryService.GetLogEntries:output_type -> logs.LogEntriesResult
+	8, // [8:11] is the sub-list for method output_type
+	5, // [5:8] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_logs_proto_init() }

@@ -3,8 +3,6 @@ syntax = "proto3";
 
 package logs;
 
-import "google/protobuf/timestamp.proto";
-
 option go_package = "github.com/DreamvatLab/logs";
 
 // Enums ========================================================================================
@@ -40,7 +38,9 @@ message LogEntry {
     // @gotags: db:"Flags"
     int64 Flags         = 9;
     // @gotags: db:"CreatedOnUtc"
-    google.protobuf.Timestamp CreatedOnUtc  = 10;
+    int64 CreatedOnUtc  = 10;
+    // @gotags: db:"CreatedOnUtcISO"
+    string CreatedOnUtcISO  = 11;
 }
 
 message WriteLogCommand {
