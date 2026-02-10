@@ -3,7 +3,6 @@ package svc
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/DreamvatLab/go/xerr"
 	"github.com/DreamvatLab/go/xutils"
@@ -44,7 +43,8 @@ func write(in *logs.WriteLogCommand) error {
 		}
 
 		// determine database and table
-		createdOnUtc := time.UnixMilli(in.LogEntry.CreatedOnUtc)
+		// createdOnUtc := time.UnixMilli(in.LogEntry.CreatedOnUtc)
+		createdOnUtc := in.LogEntry.CreatedOnUtc.AsTime()
 
 		var dbName, tableName string
 		switch client.DBPolicy {
