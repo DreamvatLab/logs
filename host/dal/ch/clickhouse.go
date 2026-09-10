@@ -143,6 +143,23 @@ func (o *ClickHouseDAL) GetLogEntry(query *logs.LogEntryQuery) (*logs.LogEntry, 
 
 	return r, nil
 }
+// escapeLikeLiteral makes v safe to sit inside a single-quoted SQL string
+// literal, and makes it match literally. Same reasoning as the MySQL DAL's copy:
+// the WHERE clause is built as one string and appended into the statement, so a
+// bind parameter cannot be used here; before this (the old
+// `// TODO: Prevent sql injection`) a single `'` in any search box closed the
+// literal and let the rest run as SQL. `%` and `_` are escaped as well — they
+// are LIKE wildcards and the surrounding `%…%` already supplies the fuzziness.
+func escapeLikeLiteral(v string) string {
+	return strings.NewReplacer(
+		`\`, `\\`,
+		`'`, `\'`,
+		`"`, `\"`,
+		`%`, `\%`,
+		`_`, `\_`,
+	).Replace(v)
+}
+
 func (o *ClickHouseDAL) GetLogEntries(query *logs.LogEntriesQuery) ([]*logs.LogEntry, int64, error) {
 	if query == nil || query.DBName == "" || query.TableName == "" {
 		return nil, 0, xerr.New("query, DBName and TableName cannot be nil or empty")
@@ -181,30 +198,20 @@ func (o *ClickHouseDAL) GetLogEntries(query *logs.LogEntriesQuery) ([]*logs.LogE
 		where.WriteString(" AND `Level` = " + strconv.FormatInt(int64(query.Level), 10))
 	}
 
-	// TODO: Prevent sql injection
-	if query.User != "" {
-		likeSql := " AND `User` LIKE '"
-		if query.Flags&1 == 1 { // Has flag, do left & right fuzzy search, other wise, only do right fuzzy search
-			likeSql += "%"
+	// Flags&1: fuzzy on both ends; otherwise right fuzzy only.
+	for _, f := range []struct{ column, value string }{
+		{"User", query.User},
+		{"TraceNo", query.TraceNo},
+		{"Message", query.Message},
+	} {
+		if f.value == "" {
+			continue
 		}
-		likeSql += query.User + "%'"
-		where.WriteString(likeSql)
-	}
-	if query.TraceNo != "" {
-		likeSql := " AND `TraceNo` LIKE '"
-		if query.Flags&1 == 1 { // Has flag, do left & right fuzzy search, other wise, only do right fuzzy search
-			likeSql += "%"
+		lead := ""
+		if query.Flags&1 == 1 {
+			lead = "%"
 		}
-		likeSql += query.TraceNo + "%'"
-		where.WriteString(likeSql)
-	}
-	if query.Message != "" {
-		likeSql := " AND `Message` LIKE '"
-		if query.Flags&1 == 1 { // Has flag, do left & right fuzzy search, other wise, only do right fuzzy search
-			likeSql += "%"
-		}
-		likeSql += query.Message + "%'"
-		where.WriteString(likeSql)
+		where.WriteString(" AND `" + f.column + "` LIKE '" + lead + escapeLikeLiteral(f.value) + "%'")
 	}
 
 	_dbLocker.RLock()

@@ -1,0 +1,9 @@
+allowBuilds:
+  # esbuild's postinstall places the platform-native binary; without it any
+  # direct esbuild invocation fails. umi bundles its own bundler, so the build
+  # currently survives without it, but denying it is a trap waiting to spring.
+  esbuild: true
+  less: true
+  # These two postinstalls only print a funding banner.
+  core-js: false
+  core-js-pure: false

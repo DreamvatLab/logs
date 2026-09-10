@@ -2,6 +2,7 @@ package mongodb
 
 import (
 	"context"
+	"regexp"
 	"sort"
 	"time"
 
@@ -9,16 +10,15 @@ import (
 	"github.com/DreamvatLab/go/xtask"
 	"github.com/DreamvatLab/logs"
 	"github.com/DreamvatLab/logs/host/core"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
-var (
-	_nameOnly = true
-	// _clients     map[string]*logs.LogClient
-	// _cacheLocker = new(sync.RWMutex)
-)
+// var (
+// 	_clients     map[string]*logs.LogClient
+// 	_cacheLocker = new(sync.RWMutex)
+// )
 
 // const (
 // 	_CLIENT_DB    = "LogClients"
@@ -35,10 +35,11 @@ type MongoDAL struct {
 
 func Init() {
 	connStr := core.ServiceConfigProvider.GetString("ConnectionStrings.MongoDB")
-	ctx := context.Background()
-	// Create a new client and connect to the server
+	// Create a new client and connect to the server.
+	// v2 dropped the context parameter: Connect no longer does any I/O, the
+	// connection is established lazily on the first operation.
 	var err error
-	_client, err = mongo.Connect(ctx, options.Client().ApplyURI(connStr))
+	_client, err = mongo.Connect(options.Client().ApplyURI(connStr))
 	xerr.FatalIfErr(err)
 
 	// _clientTable = _client.Database(_CLIENT_DB).Collection(_CLIENT_TABLE)
@@ -169,7 +170,7 @@ func (o *MongoDAL) GetDatabases(clientID string) ([]string, error) {
 		context.Background(),
 		// bson.M{"name": bson.M{"$regex": "LOG_" + clientID, "$options": "i"}},
 		bson.M{"name": bson.M{"$regex": core.LOG_DB_PREFIX + clientID}},
-		&options.ListDatabasesOptions{NameOnly: &_nameOnly},
+		options.ListDatabases().SetNameOnly(true),
 	)
 }
 
@@ -184,7 +185,9 @@ func (o *MongoDAL) GetTables(database string) ([]string, error) {
 		go func(dbName string) {
 			table := db.Collection(dbName)
 			_, err = table.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-				Keys: bson.M{"createdonutc": -1}, // Descending index
+				// Compound, and ordered: it has to match the $sort in GetLogEntries
+				// key for key, otherwise that sort cannot use this index.
+				Keys: bson.D{{Key: "createdonutc", Value: -1}, {Key: "_id", Value: -1}},
 			})
 			xerr.LogError(err)
 		}(x)
@@ -223,6 +226,24 @@ func (o *MongoDAL) GetLogEntry(query *logs.LogEntryQuery) (*logs.LogEntry, error
 	return r, nil
 }
 
+// containsIgnoreCase builds a case-insensitive **substring** match.
+//
+// The user's input is escaped, i.e. taken literally rather than as a regular
+// expression. It used to be passed straight into $regex, which silently
+// returned nothing whenever the text contained a regex metacharacter — and log
+// lines are full of them: searching for `批次#2913 [IBKR:DUM780185]` matched
+// zero rows because `[...]` was parsed as a character class (2026-09-10).
+// `.` `(` `)` `*` `+` `?` `|` `$` had the same effect, only less visibly: they
+// widened the match instead of killing it.
+//
+// Note this drops the ability to search by regex. Nobody was using it on
+// purpose — the boxes are labelled "User" / "TraceNo" / "Message", not "regex" —
+// and a search box that quietly returns nothing is worse than one that cannot
+// do character classes.
+func containsIgnoreCase(v string) bson.M {
+	return bson.M{"$regex": regexp.QuoteMeta(v), "$options": "i"}
+}
+
 func (o *MongoDAL) GetLogEntries(query *logs.LogEntriesQuery) ([]*logs.LogEntry, int64, error) {
 	table := _client.Database(query.DBName).Collection(query.TableName)
 	// Find
@@ -236,40 +257,50 @@ func (o *MongoDAL) GetLogEntries(query *logs.LogEntriesQuery) ([]*logs.LogEntry,
 	// 	}
 	// }
 
+	// Build the time range into a single condition object. Assigning
+	// matchExp["createdonutc"] twice would make the end time replace the start time.
+	timeCond := bson.M{}
 	if query.StartTime != "" {
 		t, err := time.ParseInLocation(time.RFC3339, query.StartTime, time.UTC)
 		if err != nil {
 			return nil, 0, xerr.WithStack(err)
 		}
-		matchExp["createdonutc"] = bson.M{"$gte": t.UnixMilli()}
+		timeCond["$gte"] = t.UnixMilli()
 	}
 	if query.EndTime != "" {
 		t, err := time.ParseInLocation(time.RFC3339, query.EndTime, time.UTC)
 		if err != nil {
 			return nil, 0, xerr.WithStack(err)
 		}
-		matchExp["createdonutc"] = bson.M{"$lte": t.UnixMilli()}
+		timeCond["$lte"] = t.UnixMilli()
+	}
+	if len(timeCond) > 0 {
+		matchExp["createdonutc"] = timeCond
 	}
 	if query.Level >= 0 {
 		matchExp["level"] = bson.M{"$eq": query.Level}
 	}
 
 	if query.User != "" {
-		matchExp["user"] = bson.M{"$regex": query.User, "$options": "i"}
+		matchExp["user"] = containsIgnoreCase(query.User)
 	}
 	if query.TraceNo != "" {
-		matchExp["traceno"] = bson.M{"$regex": query.TraceNo, "$options": "i"}
+		matchExp["traceno"] = containsIgnoreCase(query.TraceNo)
 	}
 	if query.Message != "" {
-		matchExp["message"] = bson.M{"$regex": query.Message, "$options": "i"}
+		matchExp["message"] = containsIgnoreCase(query.Message)
 	}
 
 	// TotalCount
 	count := bson.M{"$count": "totalcount"}
 
-	// Sort
+	// Sort by timestamp, with _id only as a tiebreaker. _id is a Sonyflake hex
+	// string generated on receipt, so it is not a reliable time order; the
+	// tiebreaker keeps paging stable when timestamps collide.
+	// bson.D, not bson.M: a map does not preserve key order, which would let
+	// _id become the primary sort key at random.
 	sortDir := -1
-	sort := bson.M{"$sort": bson.M{"_id": sortDir}}
+	sort := bson.M{"$sort": bson.D{{Key: "createdonutc", Value: sortDir}, {Key: "_id", Value: sortDir}}}
 
 	// Paginate
 	limit := bson.M{"$limit": query.PageSize}
