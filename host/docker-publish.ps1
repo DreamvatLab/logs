@@ -1,7 +1,7 @@
 # !!!!! Make sure ./build.ps1 already executed without problem first
 
 $imageName = "logs"
-$version = "1.0.6"
+$version = "1.1.0"
 $targetDir = "./dist"
 
 Write-Host "#: loading docker image"
